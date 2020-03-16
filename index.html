@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack log</title>
+</head>
+
+<body>
+  <div>
+    <canvas id="chart" width="400" height="200"></canvas>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <script>
+    async function main() {
+      const fetchedResult = await fetch("/visualize.json");
+      const datas = await fetchedResult.json();
+      const labels = Object.keys(datas[0]).filter(it => it.startsWith("〜")).sort();
+
+      const colors = [
+        "#C0392B", "#2980B9", "#27AE60", "#E67E22", "#7F8C8D",
+        "#E74C3C", "#3498DB", "#2ECC71", "#D35400", "#34495E",
+        "#9B59B6", "#1ABC9C", "#F1C40F", "#BDC3C7", "#2C3E50",
+        "#8E44AD", "#16A085", "#F39C12", "#95A5A6", "#E6B0AA",
+        "#D7BDE2", "#A9CCE3"
+      ];
+      const ctx = document.getElementById("chart").getContext("2d");
+      const myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: datas.map((it, i) => ({
+            label: it.name,
+            backgroundColor: colors[i],
+            borderColor: colors[i],
+            data: labels.map(label => it[label]),
+            fill: false,
+          })),
+        },
+        options: {
+          responsive: true,
+          title: {
+            display: true,
+            text: 'Slack event log'
+          },
+          tooltips: {
+            mode: 'index',
+            intersect: false,
+          },
+          hover: {
+            mode: 'nearest',
+            intersect: true
+          },
+          scales: {
+            xAxes: [{
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: 'Week'
+              }
+            }],
+            yAxes: [{
+              display: true,
+              scaleLabel: {
+                display: true,
+                labelString: 'Slack event counts'
+              }
+            }]
+          },
+        }
+      });
+    }
+
+    main();
+  </script>
+</body>
+
+</html>
