@@ -1,0 +1,16 @@
+{
+  "name": "slack-log",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/web-api": "^5.8.0",
+    "@types/date-fns": "^2.6.0",
+    "date-fns": "^2.10.0",
+    "json2csv": "^4.5.4"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "init": "echo '[]' > channels.json"
+  }
+}
