@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
   <script>
     async function main() {
-      const fetchedResult = await fetch("/visualize.json");
+      const fetchedResult = await fetch(`${location.href}visualize.json`);
       const datas = await fetchedResult.json();
       const labels = Object.keys(datas[0]).filter(it => it.startsWith("〜")).sort();
 
