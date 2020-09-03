@@ -1,7 +1,7 @@
 const { WebClient } = require("@slack/web-api");
 const { Parser } = require("json2csv");
 const { writeFile } = require("fs");
-const { format, addDays, addMinutes } = require("date-fns");
+const { format, addDays, addMinutes, lastDayOfMonth, differenceInMonths, addMonths } = require("date-fns");
 const CHANNELS = require("./channels.json");
 
 const writeFileAsync = async (path, data) =>
@@ -69,6 +69,14 @@ class Messages {
     return this.filter(it => Dates.isDateBetweenInterval(it.timestamp, addDays(weekend, -7), weekend));
   }
 
+  /**
+   *
+   * @param {Date} lastDayOfMonth
+   */
+  getListOneMonth(lastDayOfMonth) {
+    return this.filter(it => Dates.isDateBetweenInterval(it.timestamp, new Date(lastDayOfMonth.getFullYear(), lastDayOfMonth.getMonth(), 1), lastDayOfMonth));
+  }
+
   map(predicate) {
     return new Messages(this.list.map(predicate), this.oldest);
   }
@@ -94,6 +102,18 @@ class Dates {
     const weekTime = 7 * 24 * 60 * 60 * 1000;
     const weekCountFromNewYearToNow = Math.floor(((toTime - fromTime) / weekTime) + 1);
     return Array(weekCountFromNewYearToNow).fill(null).map((_, i) => new Date(firstWeekEnd.getTime() + (i * weekTime)));
+  }
+
+  /**
+   *
+   * @param {Date} from
+   * @param {Date} to
+   */
+  static createDatesWith1Month(from, to) {
+    const firstMonthStart = new Date(from.getFullYear(), from.getMonth(), 1);
+    // const lastMonthEnd = lastDayOfMonth(to);
+    const monthCount = Math.abs(differenceInMonths(from, to));
+    return Array(monthCount + 1).fill(null).map((_, i) => (i === 0 ? firstMonthStart : addMonths(firstMonthStart, i)));
   }
 
   /**
@@ -131,9 +151,9 @@ class Channel {
 
   toJson() {
     const { id, name, owner } = this;
-    const dates = Dates.createDatesWith7DaysIntervals(this.messages.oldest, new Date());
-    const messageCountWithDate = dates.reduce((prev, week) =>
-      ({ ...prev, [this.formatDate(week)]: this.messages.getListOneWeek(week).length }), {})
+    const dates = Dates.createDatesWith1Month(this.messages.oldest, new Date());
+    const messageCountWithDate = dates.reduce((prev, endDateOfMonth) =>
+      ({ ...prev, [this.formatDate(endDateOfMonth)]: this.messages.getListOneMonth(endDateOfMonth).length }), {})
     return {
       id, name, owner: owner.name,
       ...messageCountWithDate,
@@ -143,7 +163,7 @@ class Channel {
   createHeaders() {
     return [
       "id", "name", "owner",
-      ...Dates.createDatesWith7DaysIntervals(
+      ...Dates.createDatesWith1Month(
         this.messages.oldest,
         new Date()
       ).map(it => this.formatDate(it))
@@ -218,7 +238,7 @@ async function main() {
       .map(async ({ id, name, creator }) =>
         new Channel(id, name,
           await createUser(creator),
-          await createMessages(id, new Date(2020, 0, 1)),
+          await createMessages(id, new Date(2019, 0, 1)),
         )
       )
     )
